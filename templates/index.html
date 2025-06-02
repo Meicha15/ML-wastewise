@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Klasifikasi Sampah</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #F6FCDF;
+            padding: 40px;
+            text-align: center;
+            color: #1A1A19;
+        }
+
+        h1 {
+            color: #31511E;
+        }
+
+        form {
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        button {
+            background-color: #859F3D;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #6e8432;
+        }
+
+        .result {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: inline-block;
+            text-align: left;
+            max-width: 500px;
+        }
+
+        .result h2 {
+            color: #31511E;
+            margin-bottom: 10px;
+        }
+
+        .result p {
+            font-size: 18px;
+            margin: 8px 0;
+        }
+
+        .recommendation {
+            background-color: #e6f0c9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Klasifikasi Sampah Otomatis</h1>
+
+    <form action="/klasifikasi-sampah" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required>
+        <br>
+        <button type="submit">Klasifikasi</button>
+    </form>
+
+    {% if result %}
+    <div class="result">
+        <h2>Hasil Klasifikasi</h2>
+        <p><strong>Jenis Sampah:</strong> {{ result['Jenis Sampah'] }}</p>
+        <p><strong>Kategori:</strong> {{ result['Kategori'] }}</p>
+        <p><strong>Probabilitas:</strong> {{ result['Probabilitas'] }}</p>
+
+        <div class="recommendation">
+            <strong>Rekomendasi Pengolahan:</strong>
+            <div id="markdown-rekomendasi" style="margin-top:10px;"></div>
+        </div>
+        <script>
+            const markdownText = {{ result['Rekomendasi pengolahan'] | tojson }};
+            document.getElementById("markdown-rekomendasi").innerHTML = marked.parse(markdownText);
+        </script>
+    </div>
+    {% endif %}
+</body>
+</html>
