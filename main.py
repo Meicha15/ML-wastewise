@@ -1,25 +1,22 @@
 import random
 from fastapi import FastAPI, File, UploadFile, Request
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.templating import Jinja2Templates
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 import numpy as np
 import os
 import shutil
-import pandas as pd  # Import pandas untuk baca CSV
+import pandas as pd
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # izinkan semua origin
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-templates = Jinja2Templates(directory="templates")
 
 model = load_model('save-model/model_dense.keras', compile=False)
 
@@ -41,11 +38,9 @@ golongan_mapping = {
     "Sterofoam": "Anorganik"
 }
 
-# Load CSV saran pengolahan (pastikan path benar)
 saran_df = pd.read_csv('saran_pengolahan.csv')
 saran_dict = {}
 
-# Menyimpan semua saran dalam bentuk list berdasarkan jenis sampah
 for _, row in saran_df.iterrows():
     if row['Jenis Sampah'] not in saran_dict:
         saran_dict[row['Jenis Sampah']] = []
@@ -54,11 +49,10 @@ for _, row in saran_df.iterrows():
         'deskripsi': row['Deskripsi']
     })
 
-# Fungsi untuk memilih saran secara acak
 def get_saran_dari_csv(jenis_sampah):
     saran_list = saran_dict.get(jenis_sampah, [])
     if saran_list:
-        saran_pilihan = random.choice(saran_list)  # Memilih saran secara acak
+        saran_pilihan = random.choice(saran_list)
         return {
             'metode': saran_pilihan['metode'],
             'deskripsi': saran_pilihan['deskripsi']
@@ -80,20 +74,21 @@ def predict_image(file_path):
     golongan = golongan_mapping.get(class_label, "Tidak diketahui")
     saran = get_saran_dari_csv(class_label)
 
+    # Mengubah nama field agar konsisten dengan yang diharapkan frontend
     return {
-        "Jenis Sampah": class_label,
-        "Kategori": golongan,
+        "Kategori": class_label,
+        "Jenis": golongan,
         "Probabilitas": f"{confidence:.1f}%",
-        "Metode Pengolahan": saran['metode'],
-        "Deskripsi Pengolahan": saran['deskripsi']
+        "Saran dari Gemini": f"{saran['metode']}: {saran['deskripsi']}"
     }
 
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+@app.get("/")
+async def read_root():
+    # Mengembalikan pesan status sederhana dalam format JSON
+    return JSONResponse(content={"status": "success", "message": "WasteWise ML API is running"})
 
 @app.post("/klasifikasi-sampah")
-async def classify_waste(request: Request, file: UploadFile = File(...)):
+async def classify_waste(file: UploadFile = File(...)): # parameter `request` tidak diperlukan lagi
     temp_file = f"temp_{file.filename}"
     with open(temp_file, "wb") as f:
         shutil.copyfileobj(file.file, f)
@@ -104,7 +99,8 @@ async def classify_waste(request: Request, file: UploadFile = File(...)):
     finally:
         os.remove(temp_file)
 
-    return templates.TemplateResponse("index.html", {"request": request, "result": result})
+    # Mengembalikan hasil prediksi dalam format JSON
+    return JSONResponse(content=result, status_code=200)
 
 @app.post("/api/klasifikasi-sampah")
 async def classify_waste_json(file: UploadFile = File(...)):
