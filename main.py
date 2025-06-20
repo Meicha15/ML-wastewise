@@ -138,6 +138,5 @@ async def classify_waste_endpoint(file: UploadFile = File(...)):
 # Bagian ini untuk testing lokal, tidak digunakan oleh PM2 atau uvicorn production
 if __name__ == "__main__":
     import uvicorn
-    # PORT default diubah ke 8000 yang lebih umum untuk FastAPI
-    port = int(os.environ.get("PORT", 8000)) 
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    port = int(os.environ.get("PORT", 8080)) 
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
